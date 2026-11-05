@@ -1,0 +1,40 @@
+name: Official SDAIA capstone integration
+on:
+  workflow_dispatch:
+jobs:
+  verify-official:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: submission
+      - uses: actions/checkout@v4
+        with:
+          repository: SDAIAAcademy/data-engineering
+          path: upstream
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Overlay modified capstone
+        run: |
+          cp submission/course_overlay/capstone/pipeline.py upstream/labs/capstone/pipeline.py
+          cp submission/course_overlay/capstone/verify.py upstream/labs/capstone/verify.py
+          cp submission/course_overlay/capstone/contracts/payments.odcs.yaml upstream/labs/capstone/contracts/payments.odcs.yaml
+      - name: Install course environment
+        working-directory: upstream/labs
+        run: uv sync
+      - name: Run original Dagster/dbt/Iceberg stack
+        working-directory: upstream/labs
+        env:
+          DE_QUICK: '1'
+        run: |
+          uv run python capstone/pipeline.py
+          uv run python capstone/verify.py
+      - name: Re-run to verify idempotency
+        working-directory: upstream/labs
+        env:
+          DE_QUICK: '1'
+        run: |
+          uv run python capstone/pipeline.py
+          uv run python capstone/verify.py
