@@ -1,0 +1,4 @@
+order_id,customer_id,city,amount,updated_at
+1,CUST001,Riyadh,120.0,2026-01-01T08:00:00Z
+2,CUST002,Jeddah,80.0,2026-01-01T09:00:00Z
+3,CUST003,Riyadh,45.0,2026-01-01T10:00:00Z
