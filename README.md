@@ -29,7 +29,8 @@ It extends the original pipeline rather than building another unrelated project.
 - Eight additional warehouse verification queries in `course_overlay/capstone/verify.py`.
 - An integration workflow clones the official SDAIA course repository, overlays the modifications, runs the original Dagster/dbt/Iceberg stack, and repeats the run for replay verification.
 
-**[Official-stack validation on GitHub Actions](../../actions/workflows/course-integration.yml)**
+**[Official-stack validation on GitHub Actions](../../actions/workflows/course-integration.yml)**  
+**[Verified execution results — 30 assets, 45 Dagster checks, 8 independent checks, two successful runs](course_overlay/RESULTS.md)**
 
 ### Reproduce against the official course
 
@@ -63,6 +64,6 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/GOVERNANCE.md](docs/GOVE
 
 The original course dataset contains deliberately dirty records. Failed quality checks may be warnings rather than blockers; retain the actual dbt warnings in the presentation, do not claim they all passed. The incremental implementation re-scans the full JSONL file (incremental **warehouse updates**, not an API/CDC consumer). SQLite app tables and supplier/review inputs are full refresh. Generated databases and customer PII must never be pushed to GitHub. Access to raw data must be restricted.
 
-**Testing disclosure:** The current status of the complete official stack must be taken from [the course integration workflow](../../actions/workflows/course-integration.yml). A green offline demo workflow alone does not establish that the official course flow passed.
+**Testing disclosure:** The official stack passed in GitHub Actions on 5 November 2026, with three data-quality warnings documented in [RESULTS.md](course_overlay/RESULTS.md). For current status of future changes, consult [the course integration workflow](../../actions/workflows/course-integration.yml). A green offline demo workflow alone does not establish that the official course flow passed.
 
 **Source and attribution:** Based on SDAIA Academy's course starter, with modifications documented in this repository.
