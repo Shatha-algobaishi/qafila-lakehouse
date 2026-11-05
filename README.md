@@ -86,7 +86,7 @@ flowchart LR
 
 ## Evaluation evidence
 
-The local sample produced **7 successful automated tests** and **18 passing data quality checks**, with **one synthetic invalid payment quarantined**. These results are generated on synthetic files and **must not be represented as execution against the original course dataset**. For commands and Q&A, see `docs/DEMO_SCRIPT.md`. The 8-slide presentation is in `docs/`.
+The local sample produced **7 successful automated tests** and **18 passing data quality checks**, with **one synthetic invalid payment quarantined**. These results are generated on synthetic files and **must not be represented as execution against the original course dataset**. For commands and Q&A, see `docs/DEMO_SCRIPT.md`. An eight-slide presentation outline is in `docs/PRESENTATION.md`; the PowerPoint file is supplied separately in the ChatGPT conversation, not committed to GitHub.
 
 ## Official SDAIA course integration requirement
 
@@ -100,7 +100,7 @@ src/report.py         Gold tables + quality summary
 src/dagster_app.py    Optional Dagster graph and schedule
 data/                 Synthetic test inputs only
 tests/                Six regression and integration tests
-docs/                 Architecture, governance, live demo, slides
+docs/                 Architecture, governance, verification, presentation outline
 .github/workflows/    CI test workflow
 ```
 
