@@ -1,6 +1,10 @@
 name: Official SDAIA capstone integration
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'course_overlay/**'
+      - '.github/workflows/course-integration.yml'
 jobs:
   verify-official:
     runs-on: ubuntu-latest
