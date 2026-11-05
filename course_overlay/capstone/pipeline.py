@@ -115,6 +115,10 @@ def _merge_raw_feed(table: str, reader: str):
                 FROM latest WHERE false
             """)
             con.execute("""
+                DELETE FROM quarantine.invalid_payments
+                WHERE payment_id IN (SELECT payment_id FROM latest)
+            """)
+            con.execute("""
                 INSERT INTO quarantine.invalid_payments
                 SELECT l.*, 'amount <= 0 / invalid payment field'
                 FROM latest l
