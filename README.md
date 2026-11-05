@@ -1,129 +1,68 @@
-# Qafila Lakehouse — SDAIA Data Engineering Capstone (Option 1)
+# Qafila Lakehouse | SDAIA Data Engineering Capstone
 
+**Graduation project — Option 1: Qafila Lakehouse**  
 **Author:** @Shatha-algobaishi  
-**Academy:** @SDAIAAcademy  
-**Course:** Modern Data Engineering for AI Systems  
-**Selected project:** Qafila Lakehouse (Option 1 of 3)
+**Training academy:** @SDAIAAcademy  
+**Course:** Modern Data Engineering for AI Systems
 
-## Official course-based implementation
+This repository contains a course-based implementation of the **Qafila Lakehouse** option from the [SDAIA Academy official capstone starter](https://github.com/SDAIAAcademy/data-engineering/tree/main/labs/capstone).
 
-The **primary SDAIA-aligned work** is now in **[`course_overlay/`](course_overlay/README.md)**. It extends the [official SDAIA Academy capstone starter](https://github.com/SDAIAAcademy/data-engineering/tree/main/labs/capstone) with:
+## Start here: official SDAIA implementation
 
-- **DuckDB** warehouse, official **dbt** models/tests and **Iceberg** Gold publishing.
-- **Dagster** orchestration, asset checks and schedule retained from the course starter.
-- Incremental snapshot upserts by key/timestamp for payments and delivery events.
-- Quarantine for invalid payment amounts/fields, excluded from the clean payments feed.
-- Eight independent warehouse checks in `course_overlay/capstone/verify.py`.
-- [Official-stack GitHub Actions workflow](.github/workflows/course-integration.yml) that checks out the upstream course, overlays our changes, installs dependencies and runs twice.
+**[`course_overlay/` — official capstone code and instructions](course_overlay/README.md)**
 
-**[Read the official implementation instructions](course_overlay/README.md).**
+It extends the original pipeline rather than building another unrelated project. The integration uses:
 
-**Verification status:** Passing offline demo tests do **not** verify the official course stack. Check [GitHub Actions](../../actions/workflows/course-integration.yml) for actual upstream integration results. Do not represent the official overlay as passed until the upstream workflow completes successfully.
+| Stage | Technology | Function |
+|---|---|---|
+| Sources | SQLite OLTP, JSONL and CSV | Orders, payments, deliveries, suppliers, reviews |
+| Ingestion and raw | DuckDB | Multiple sources and incremental payment/event upserts |
+| Transformation | dbt | Staging, intermediate, dimensional and marts models |
+| Validation | dbt tests, ODCS and SQL checks | Quality checks and non-positive payment quarantine |
+| Publication | Apache Iceberg | Governed Gold data |
+| Orchestration | Dagster | Asset graph, job, monitoring and scheduled refresh |
 
----
+### What's improved over the starter
 
-## Secondary offline teaching demo
+- Payments and delivery events update by stable source key and timestamp; reruns do not duplicate these rows.
+- Invalid payments are quarantined and excluded from clean payment data before analytics.
+- Eight additional warehouse verification queries in `course_overlay/capstone/verify.py`.
+- An integration workflow clones the official SDAIA course repository, overlays the modifications, runs the original Dagster/dbt/Iceberg stack, and repeats the run for replay verification.
 
-The older `src/`, `data/`, `tests/` and local docs provide a separate **SQLite teaching demo**. It can be run without installing the official course dependencies, but **it is not the official submission implementation**.
+**[Official-stack validation on GitHub Actions](../../actions/workflows/course-integration.yml)**
 
-## Problem and outcome
+### Reproduce against the official course
 
-An e-commerce operations team has separate order exports, payment API extracts and courier event feeds. This platform consolidates these sources into a repeatable quality-controlled analytical flow, producing daily sales by city, paid amounts by order and courier event counts. It illustrates how to detect errors, protect identifiers and avoid duplicate ingestion on reruns.
+Clone the official [SDAIA course repository](https://github.com/SDAIAAcademy/data-engineering), then copy these overlay files into its `labs/capstone` directory. From the **course's** `labs` directory:
 
-## Reproduce in one command
+```bash
+uv sync
+uv run python capstone/pipeline.py
+uv run python capstone/verify.py
+uv run python capstone/pipeline.py
+uv run python capstone/verify.py
+uv run dagster dev -f capstone/pipeline.py
+```
 
-Python 3.10+ (standard library only):
+For the precise instructions and limitations, read [course_overlay/README.md](course_overlay/README.md).
+
+## Additional offline demo (not the official course stack)
+
+The `src/`, `data/` and `tests/` folders are a separate, portable **SQLite teaching demo** using entirely synthetic sample data. It demonstrates incremental loads, Bronze/Silver/Gold processing, row-level quarantine and 18 SQL rules. It is provided as supporting work, **not** as a replacement for the official DuckDB/dbt/Dagster/Iceberg implementation.
 
 ```bash
 python -m src.pipeline --demo
-```
-
-Run the 7 automated test scenarios (including 18 SQL quality rules):
-
-```bash
+python -m src.report
 python -m pip install -e '.[test]'
 python -m pytest -q
 ```
 
-Print the Gold tables:
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/GOVERNANCE.md](docs/GOVERNANCE.md), [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md), [docs/VERIFICATION.md](docs/VERIFICATION.md) and [docs/PRESENTATION.md](docs/PRESENTATION.md). Those supporting documents originally describe the offline demo; the course-based overlay is documented separately.
 
-```bash
-python -m src.report
-```
+## Quality, privacy and limitations
 
-All generated database files are ignored by Git. For an explicitly provided local file export, set a non-demo token key:
+The original course dataset contains deliberately dirty records. Failed quality checks may be warnings rather than blockers; retain the actual dbt warnings in the presentation, do not claim they all passed. The incremental implementation re-scans the full JSONL file (incremental **warehouse updates**, not an API/CDC consumer). SQLite app tables and supplier/review inputs are full refresh. Generated databases and customer PII must never be pushed to GitHub. Access to raw data must be restricted.
 
-```bash
-export QAFILA_TOKEN_SALT='provide-a-private-random-secret'
-python -m src.pipeline --input-dir /private/dataset --db artifacts/qafila.sqlite
-```
+**Testing disclosure:** The current status of the complete official stack must be taken from [the course integration workflow](../../actions/workflows/course-integration.yml). A green offline demo workflow alone does not establish that the official course flow passed.
 
-The supplied CSV/JSONL schemas are intended for demonstration only; real source schemas require mapping and privacy review.
-
-## Data sources and loading
-
-| Source | Type | Grain | Refresh | Quality problem |
-|---|---|---|---|---|
-| orders.csv | Database-style CSV export | order | timestamp cursor + upsert | missing city / negative total |
-| payments.jsonl | API-style JSONL export | payment | cursor + 48-hour lookback + upsert | sample P3 has negative amount |
-| events.jsonl | Event JSONL replay | event | cursor + upsert | event type / unknown order |
-
-No real database or HTTP endpoint is contacted. The JSONL files simulate extracted feeds. Older updates cannot overwrite newer records. The lookback is a deliberate bounded-lateness policy; backfills and deletions require additional CDC processing.
-
-## Architecture
-
-```mermaid
-flowchart LR
-    A[Orders CSV] --> D[Bronze SQLite UPSERT]
-    B[Payments JSONL] --> D
-    C[Courier events JSONL] --> D
-    D --> E[Silver validate and pseudonymize]
-    D --> Q[Sanitized quarantine]
-    E --> F[Gold aggregate marts]
-    E --> G[18 SQL checks]
-    G --> H[Exit success or failure]
-```
-
-**Orchestration:** CLI stages run in order inside a transaction. An **optional** Dagster asset graph and 01:30 Asia/Riyadh schedule are provided in `src/dagster_app.py` (`pip install -e '.[orchestration]'`; `dagster dev -f src/dagster_app.py`). This optional stack has not been executed in the offline test environment.
-
-## Data model / fact grain
-
-| Table | Layer | Grain (one row per) | Key | Materialization |
-|---|---|---|---|---|
-| bronze_orders | Bronze | order | order_id | incremental upsert |
-| bronze_payments | Bronze | payment | payment_id | incremental upsert |
-| bronze_events | Bronze | courier event | event_id | incremental upsert |
-| silver_orders | Silver | valid order | order_id | deterministic rebuild |
-| silver_payments | Silver | valid payment | payment_id | deterministic rebuild |
-| silver_events | Silver | valid event | event_id | deterministic rebuild |
-| gold_daily_city_sales | Gold | update date and city | day,city | deterministic rebuild |
-| gold_order_payments | Gold | order with paid payments | order_id | deterministic rebuild |
-| gold_delivery_performance | Gold | event day and event type | day,event_type | deterministic rebuild |
-
-## Quality, observability, governance
-
-**18 executable quality checks** validate uniqueness, nulls, positivity, allowed values, referential integrity, reconciled totals, identifier isolation and quarantine hygiene. The included `P3` payment has a negative amount and is rejected to `quarantine` rather than being published. Quality outcomes and run metrics are recorded in SQLite. See `docs/GOVERNANCE.md` for the field classification table, access requirements and erasure process. Tokenization is not anonymization: Silver must still be access controlled.
-
-## Evaluation evidence
-
-The local sample produced **7 successful automated tests** and **18 passing data quality checks**, with **one synthetic invalid payment quarantined**. These results are generated on synthetic files and **must not be represented as execution against the original course dataset**. For commands and Q&A, see `docs/DEMO_SCRIPT.md`. An eight-slide presentation outline is in `docs/PRESENTATION.md`; the PowerPoint file is supplied separately in the ChatGPT conversation, not committed to GitHub.
-
-## Official SDAIA course integration requirement
-
-The authoritative course starter is [SDAIAAcademy/data-engineering/labs/capstone](https://github.com/SDAIAAcademy/data-engineering/tree/main/labs/capstone). It includes `pipeline.py`, `dbt_qafila`, a payment ODCS contract and Iceberg publication. **This repository does not include or claim to test the original full course stack.** To meet the original rubric as written, the team still needs to run and validate its actual Dagster/dbt/DuckDB/Iceberg flow, confirm the 8+ quality checks on the course data, and demonstrate the modifications in that environment. Do not submit this offline project as a verified replacement without performing those steps.
-
-## Repo tree
-
-```text
-src/pipeline.py       Portable command-line pipeline
-src/report.py         Gold tables + quality summary
-src/dagster_app.py    Optional Dagster graph and schedule
-data/                 Synthetic test inputs only
-tests/                Regression and integration tests
-docs/                 Architecture, governance, verification, presentation outline
-.github/workflows/    CI test workflow
-```
-
-## Limitations / next steps
-
-SQLite is not equivalent to a DuckDB/Iceberg warehouse; the orders source is a CSV export rather than a connected OLTP DB; `updated_at` is a demo proxy for business order date; event-time windowing and SLA alerting are not implemented; and the optional Dagster definitions have not been installed and run here. At 100× volume, use partitioned parquet/Iceberg, a proper CDC mechanism, exact decimal currency, a transactional queue, and production secret management. These tradeoffs are deliberately disclosed rather than overclaimed.
+**Source and attribution:** Based on SDAIA Academy's course starter, with modifications documented in this repository.
