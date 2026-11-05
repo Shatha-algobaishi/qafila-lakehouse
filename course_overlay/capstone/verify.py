@@ -25,10 +25,10 @@ checks={
 output={}
 try:
     for name,query in checks.items():
-        output[name]=int(con.sql(query).fetchone()[0])
-    output["raw_counts"]={name:con.sql(f'SELECT count(*) FROM raw.{name}').fetchone()[0]
+        output[name]=int(con.sql(query).fetchall()[0][0])
+    output["raw_counts"]={name:con.sql(f'SELECT count(*) FROM raw.{name}').fetchall()[0][0]
                           for name in ("payments","delivery_events","orders")}
-    output["quarantine_count"]=con.sql('SELECT count(*) FROM quarantine.invalid_payments').fetchone()[0]
+    output["quarantine_count"]=con.sql('SELECT count(*) FROM quarantine.invalid_payments').fetchall()[0][0]
     output["all_passed"]=all(v==0 for k,v in output.items() if k in checks)
 finally:
     con.close()
