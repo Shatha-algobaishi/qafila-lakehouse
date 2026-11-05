@@ -22,4 +22,4 @@ python -m pip install -e '.[test]'
 python -m pytest -q
 ```
 
-The downloadable PowerPoint prepared in the ChatGPT conversation is a separate binary artifact and is **not included in this GitHub repository**.
+The PowerPoint presentation is not included in this repository; this file provides the presentation outline.
