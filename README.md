@@ -1,10 +1,30 @@
-# Qafila Lakehouse — Data Engineering Capstone
+# Qafila Lakehouse — SDAIA Data Engineering Capstone (Option 1)
 
-**Submitted by:** @Shatha-algobaishi  
+**Author:** @Shatha-algobaishi  
 **Academy:** @SDAIAAcademy  
-**Course:** Modern Data Engineering for AI Systems — SDAIA Academy
+**Course:** Modern Data Engineering for AI Systems  
+**Selected project:** Qafila Lakehouse (Option 1 of 3)
 
-**Project type:** reproducible offline reference project for SDAIA Option 1 (Qafila Lakehouse). **Input data:** synthetic only. **Honest scope:** this is a complete, tested SQLite educational pipeline, **not an end-to-end run of the official SDAIA DuckDB/dbt/Iceberg starter**. That integration requires the course checkout and dependencies.
+## Official course-based implementation
+
+The **primary SDAIA-aligned work** is now in **[`course_overlay/`](course_overlay/README.md)**. It extends the [official SDAIA Academy capstone starter](https://github.com/SDAIAAcademy/data-engineering/tree/main/labs/capstone) with:
+
+- **DuckDB** warehouse, official **dbt** models/tests and **Iceberg** Gold publishing.
+- **Dagster** orchestration, asset checks and schedule retained from the course starter.
+- Incremental snapshot upserts by key/timestamp for payments and delivery events.
+- Quarantine for invalid payment amounts/fields, excluded from the clean payments feed.
+- Eight independent warehouse checks in `course_overlay/capstone/verify.py`.
+- [Official-stack GitHub Actions workflow](.github/workflows/course-integration.yml) that checks out the upstream course, overlays our changes, installs dependencies and runs twice.
+
+**[Read the official implementation instructions](course_overlay/README.md).**
+
+**Verification status:** Passing offline demo tests do **not** verify the official course stack. Check [GitHub Actions](../../actions/workflows/course-integration.yml) for actual upstream integration results. Do not represent the official overlay as passed until the upstream workflow completes successfully.
+
+---
+
+## Secondary offline teaching demo
+
+The older `src/`, `data/`, `tests/` and local docs provide a separate **SQLite teaching demo**. It can be run without installing the official course dependencies, but **it is not the official submission implementation**.
 
 ## Problem and outcome
 
@@ -99,7 +119,7 @@ src/pipeline.py       Portable command-line pipeline
 src/report.py         Gold tables + quality summary
 src/dagster_app.py    Optional Dagster graph and schedule
 data/                 Synthetic test inputs only
-tests/                Six regression and integration tests
+tests/                Regression and integration tests
 docs/                 Architecture, governance, verification, presentation outline
 .github/workflows/    CI test workflow
 ```
